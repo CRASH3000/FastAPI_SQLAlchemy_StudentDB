@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import SessionLocal
 from crud import StudentCRUD
@@ -66,3 +66,58 @@ def get_all_students(db: Session = Depends(get_db)):
         }
         for s in students
     ]
+
+@app.get("/student/{student_id}",
+         summary="Получение информации о студенте по ID",
+         description="Возвращает информацию о студенте с указанным ID (id, фамилия, имя, факультет, курс, оценка).",
+         tags=["Студенты"]
+)
+def get_student_by_id(student_id: int, db: Session = Depends(get_db)):
+    crud = StudentCRUD(db)
+    student = crud.get_student_by_id(student_id)
+
+    if student is None:
+        return {"error": "Студент с таким ID не найден"}
+
+    return {
+        "id": student.id,
+        "last_name": student.last_name,
+        "first_name": student.first_name,
+        "faculty": student.faculty,
+        "course": student.course,
+        "grade": student.grade
+    }
+
+@app.post("/students/",
+          summary="Добавление нового студента",
+          tags=["Студенты"]
+          )
+def create_new_student(last_name: str, first_name: str, faculty: str, course: str, grade: int, db: Session = Depends(get_db)):
+
+    crud = StudentCRUD(db)
+    student = crud.post_add_student(last_name, first_name, faculty, course, grade)
+    return {"message": "Студент успешно добавлен", "id": student.id}
+
+@app.put("/students/{student_id}",
+         summary="Обновление информации о студенте",
+         tags=["Студенты"]
+         )
+def update_student_info_by_id(student_id: int, last_name: str = None, first_name: str = None, faculty: str = None,
+                   course: str = None, grade: int = None, db: Session = Depends(get_db)):
+    crud = StudentCRUD(db)
+    student = crud.put_update_student_by_id(student_id, last_name, first_name, faculty, course, grade)
+    if not student:
+        raise HTTPException(status_code=404, detail="Студент не найден")
+    return {"message": "Данные студента обновлены", "student": student}
+
+@app.delete("/students/{student_id}",
+            summary="Удаление студента из базы по ID",
+            tags=["Студенты"]
+            )
+def delete_student(student_id: int, db: Session = Depends(get_db)):
+    crud = StudentCRUD(db)
+    student = crud.delete_student_by_id(student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Студент не найден")
+    return {"message": "Студент успешно удалён", "id": student.id}
+
