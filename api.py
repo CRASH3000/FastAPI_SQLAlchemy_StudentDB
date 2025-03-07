@@ -187,6 +187,6 @@ def delete_student(student_id: int, db: Session = Depends(get_db), user_id: str 
 def delete_students_background(student_ids: list[int], background_tasks: BackgroundTasks,
                                user_id: str = Depends(authenticate_user)):
     background_tasks.add_task(delete_students_by_ids, student_ids)
-    return {"message": f"Задача по удалению студентов с ID {student_ids} запущена в фоне."}
+    return {"message": f"Задача по удалению студентов с ID {student_ids} запущена в фоне.."}
 
 
